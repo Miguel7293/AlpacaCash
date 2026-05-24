@@ -47,7 +47,6 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
                   ? "Tu cuenta necesita completar perfil antes de ingresar."
                   : null;
 
-
   async function handleGoogle() {
     setError(null);
     if (!env.isConfigured) {
@@ -58,11 +57,10 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
     try {
       const supabase = createClient();
       const redirectTo = getAuthCallbackUrl();
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           ...(redirectTo ? { redirectTo } : {}),
-          skipBrowserRedirect: true,
         },
       });
       if (oauthError) {
@@ -70,12 +68,6 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
         setLoading(false);
         return;
       }
-      if (!data?.url) {
-        setError("Supabase no devolvió la URL de Google. Revisá que el provider esté habilitado.");
-        setLoading(false);
-        return;
-      }
-      window.location.assign(data.url);
     } catch (err) {
       setError(err instanceof Error ? `Error: ${err.message}` : "Error inesperado con Google.");
       setLoading(false);

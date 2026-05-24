@@ -75,11 +75,10 @@ export function Register({
     try {
       const supabase = createClient();
       const redirectTo = getAuthCallbackUrl();
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           ...(redirectTo ? { redirectTo } : {}),
-          skipBrowserRedirect: true,
         },
       });
       if (oauthError) {
@@ -87,12 +86,6 @@ export function Register({
         setLoading(false);
         return;
       }
-      if (!data?.url) {
-        setError("Supabase no devolvió la URL de Google. Revisá que el provider esté habilitado.");
-        setLoading(false);
-        return;
-      }
-      window.location.assign(data.url);
     } catch (err) {
       setError(err instanceof Error ? `Error: ${err.message}` : "Error inesperado con Google.");
       setLoading(false);
