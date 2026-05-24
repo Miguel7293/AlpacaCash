@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthShell } from "./AuthShell";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -10,6 +10,7 @@ import { Mail, Lock, Eye, EyeOff, Fingerprint } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_TO_ROUTE } from "@/lib/supabase/types";
 import type { Role } from "@/lib/supabase/types";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?: () => void }) {
   const [show, setShow] = useState(false);
@@ -18,10 +19,19 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const env = getSupabaseEnv();
+  const configError = searchParams.get("error") === "supabase-config" || !env.isConfigured;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!env.isConfigured) {
+      setError("Falta configurar Supabase en Vercel o en Frontend/.env.local.");
+      return;
+    }
+
     setLoading(true);
     try {
       const supabase = createClient();
@@ -94,13 +104,19 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
             <p className="text-sm text-[var(--terracotta)] bg-[var(--pink)]/30 rounded-xl px-4 py-3">{error}</p>
           )}
 
+          {configError && !error && (
+            <p className="text-sm text-[var(--terracotta)] bg-[var(--pink)]/30 rounded-xl px-4 py-3">
+              Supabase todavía no está configurado. En Vercel cargá <code>NEXT_PUBLIC_SUPABASE_URL</code> y <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+            </p>
+          )}
+
           <label className="flex items-center gap-2 text-sm text-[var(--teal-deep)]/80">
             <input type="checkbox" className="rounded border-[var(--border)]" /> Mantener sesión iniciada
           </label>
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || !env.isConfigured}
             className="w-full h-12 rounded-full bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] disabled:opacity-60"
           >
             {loading ? "Ingresando…" : "Ingresar"}

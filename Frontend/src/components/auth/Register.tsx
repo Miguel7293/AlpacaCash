@@ -10,6 +10,7 @@ import { Mail, Lock, User, MapPin, Building2, Sprout, Factory, ShieldCheck, Layo
 import type { RoleId } from "./RoleSelector";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_ID_TO_ROLE, ROLE_TO_ROUTE } from "@/lib/supabase/types";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 const roleOptions: { id: RoleId; icon: typeof Sprout; label: string }[] = [
   { id: "producer", icon: Sprout, label: "Productor" },
@@ -33,6 +34,7 @@ export function Register({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const env = getSupabaseEnv();
   const totalSteps = 3;
 
   const [formData, setFormData] = useState({
@@ -58,6 +60,12 @@ export function Register({
 
   async function handleFinalSubmit() {
     setError(null);
+
+    if (!env.isConfigured) {
+      setError("Falta configurar Supabase en Vercel o en Frontend/.env.local.");
+      return;
+    }
+
     setLoading(true);
     try {
       const supabase = createClient();
@@ -254,6 +262,12 @@ export function Register({
 
           {step === 3 && (
             <>
+              {!env.isConfigured && (
+                <p className="text-sm text-[var(--terracotta)] bg-[var(--pink)]/30 rounded-xl px-4 py-3">
+                  Antes de registrar usuarios reales, configurá <code>NEXT_PUBLIC_SUPABASE_URL</code> y <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+                </p>
+              )}
+
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--ivory-2)] p-5 space-y-3">
                 <h3 className="text-[var(--teal-deep)]" style={{ fontWeight: 600 }}>Consentimiento de datos</h3>
                 {[
@@ -284,7 +298,7 @@ export function Register({
                 Atrás
               </button>
             ) : <span />}
-            <Button type="submit" disabled={loading} className="h-12 rounded-full bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] px-6 disabled:opacity-60">
+            <Button type="submit" disabled={loading || (step === totalSteps && !env.isConfigured)} className="h-12 rounded-full bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] px-6 disabled:opacity-60">
               {step === totalSteps ? (loading ? "Creando cuenta…" : "Crear cuenta") : "Siguiente"} <ArrowRight className="ml-1 w-4 h-4" />
             </Button>
           </div>
