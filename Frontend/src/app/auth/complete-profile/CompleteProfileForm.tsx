@@ -81,16 +81,13 @@ export function CompleteProfileForm({
     try {
       const supabase = createClient();
 
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: userId,
-        nombre: normalizedName,
-        email,
-        rol: role,
-        avatar_url: avatarUrl,
-      });
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        { id: userId, nombre: normalizedName, email, rol: role, avatar_url: avatarUrl },
+        { onConflict: "id" }
+      );
 
       if (profileError) {
-        setError(`No se pudo crear tu perfil: ${profileError.message}`);
+        setError(`No se pudo guardar tu perfil: ${profileError.message}`);
         return;
       }
 

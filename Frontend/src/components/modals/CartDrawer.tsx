@@ -19,19 +19,21 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   const handleCheckout = async () => {
     setCheckoutError(null);
-    
-    // Si el usuario no está logueado o no es una empresa compradora
-    if (!user || role !== "empresa") {
-      setSubmitted(true);
-      clearCart();
+
+    if (!user) {
+      setCheckoutError("Iniciá sesión para enviar una solicitud de compra.");
+      return;
+    }
+
+    if (role !== "empresa") {
+      setCheckoutError("Solo compradores registrados pueden enviar solicitudes de compra.");
       return;
     }
 
     setCheckoutLoading(true);
     try {
       const supabase = createClient();
-      
-      // Obtener el empresa_id del comprador
+
       const { data: empresa, error: empError } = await supabase
         .from("empresas")
         .select("id")
@@ -39,10 +41,9 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         .single();
 
       if (empError || !empresa) {
-        throw new Error("No se pudo encontrar tu registro de empresa asociada en AlpaCash.");
+        throw new Error("No encontramos tu registro de empresa. Verificá que tu perfil esté completo.");
       }
 
-      // Filtrar lotes que tienen recordId (UUID real en DB)
       const dbItems = items.filter((it) => it.recordId && it.productorId);
 
       if (dbItems.length > 0) {
@@ -58,17 +59,14 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           .insert(inserts);
 
         if (insertError) {
-          throw insertError;
+          throw new Error(insertError.message);
         }
       }
 
       setSubmitted(true);
       clearCart();
     } catch (err) {
-      console.warn("Fallo el checkout en base de datos. Simulando éxito localmente:", err);
-      // Fallback local: de todos modos vacía el carrito y simula éxito
-      setSubmitted(true);
-      clearCart();
+      setCheckoutError(err instanceof Error ? err.message : "Error al procesar la solicitud. Intentá de nuevo.");
     } finally {
       setCheckoutLoading(false);
     }
@@ -143,16 +141,16 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 </div>
               </div>
               
-              {(!user || role !== "empresa") && items.length > 0 && (
-                <div className="mt-3 text-[10px] text-[var(--gold)]/80 leading-snug">
-                  * Modo demostración local. Iniciá sesión como Comprador para registrar la compra en la base de datos de producción.
+              {checkoutError && (
+                <div className="mt-3 text-xs text-[var(--terracotta)] bg-white/10 rounded-xl px-3 py-2 leading-snug">
+                  {checkoutError}
                 </div>
               )}
 
-              <button 
-                disabled={!items.length || checkoutLoading} 
-                onClick={handleCheckout} 
-                className="mt-4 w-full px-5 py-3.5 rounded-full bg-[var(--terracotta)] text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" 
+              <button
+                disabled={!items.length || checkoutLoading}
+                onClick={handleCheckout}
+                className="mt-4 w-full px-5 py-3.5 rounded-full bg-[var(--terracotta)] text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ fontWeight: 600 }}
               >
                 {checkoutLoading ? "Procesando solicitud..." : <>Enviar solicitud de compra <ArrowRight className="w-4 h-4" /></>}

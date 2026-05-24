@@ -37,7 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLot[]>(() => {
     try {
       if (typeof window === "undefined") return [];
-      const stored = window.sessionStorage.getItem(STORAGE_KEY);
+      const stored = window.localStorage.getItem(STORAGE_KEY);
       return stored ? (JSON.parse(stored) as CartLot[]) : [];
     } catch {
       return [];
@@ -46,7 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const persist = useCallback((next: CartLot[]) => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
       // sessionStorage not available
     }
