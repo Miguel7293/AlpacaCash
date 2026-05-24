@@ -4,7 +4,17 @@ import type { NextRequest } from "next/server";
 import { ROLE_TO_ROUTE, type Role } from "@/lib/supabase/types";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  
+  // Resolvémos el origin público dinámicamente para reverse proxies (Render, Vercel)
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  
+  const origin = envUrl
+    ? (envUrl.startsWith("http") ? envUrl : `https://${envUrl}`).replace(/\/+$/, "")
+    : (host ? `${proto}://${host}` : new URL(request.url).origin);
+
   const code = searchParams.get("code");
 
   if (!code) {
