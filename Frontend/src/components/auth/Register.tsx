@@ -165,7 +165,7 @@ export function Register({
 
       const userId = data.user?.id;
       if (!userId) {
-        setError("Cuenta creada pero el registro quedó incompleto. Confirmá tu correo y volvé a iniciar sesión.");
+        setError("Este correo ya está registrado o el registro está pendiente. Confirmá tu correo si recibiste el enlace, o intentá iniciar sesión directamente.");
         return;
       }
 
