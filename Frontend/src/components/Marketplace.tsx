@@ -1,11 +1,15 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
   Search, SlidersHorizontal, Grid3x3, List, MapPin, BadgeCheck, ShieldCheck, Lock,
-  ArrowUpDown, ChevronDown, Heart, Scale, ShoppingCart, ArrowLeft, X
+  ArrowUpDown, ChevronDown, Heart, Scale, ShoppingCart, ArrowLeft, X, CheckCircle2
 } from "lucide-react";
+import { useCart } from "@/lib/hooks/useCart";
+import { CartDrawer } from "./modals/CartDrawer";
 
 type Lot = {
   code: string;
@@ -79,6 +83,22 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
     maxPrice: 50,
   });
   const [compare, setCompare] = useState<Set<string>>(new Set());
+  const [cartOpen, setCartOpen] = useState(false);
+  const { items: cartItems, addItem, count } = useCart();
+
+  const isInCart = (code: string) => cartItems.some((c) => c.id === code);
+  const handleAdd = (l: Lot) => {
+    if (isInCart(l.code)) return;
+    addItem({
+      id: l.code,
+      cat: l.category,
+      origin: l.region,
+      lb: l.qty,
+      price: l.price,
+      prod: l.verifiedProducer ? "Productor verificado" : "Productor (pendiente)",
+      grade: l.quality,
+    });
+  };
 
   const filtered = useMemo(() => {
     let list = ALL_LOTS.filter((l) => {
@@ -145,8 +165,8 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
             <Button variant="ghost" className="text-[var(--teal-deep)] hover:bg-[var(--ivory-2)] rounded-full px-3">
               <Heart className="w-4 h-4 mr-1.5" /> 4
             </Button>
-            <Button className="bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] rounded-full">
-              <ShoppingCart className="w-4 h-4 mr-1.5" /> Carrito (2)
+            <Button onClick={() => setCartOpen(true)} className="bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] rounded-full">
+              <ShoppingCart className="w-4 h-4 mr-1.5" /> Carrito ({count})
             </Button>
           </div>
         </div>
@@ -234,13 +254,27 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
           {view === "grid" ? (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {filtered.map((l) => (
-                <LotCard key={l.code} l={l} compare={compare.has(l.code)} onCompare={() => toggleCompare(l.code)} />
+                <LotCard
+                  key={l.code}
+                  l={l}
+                  compare={compare.has(l.code)}
+                  onCompare={() => toggleCompare(l.code)}
+                  inCart={isInCart(l.code)}
+                  onAdd={() => handleAdd(l)}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-3">
               {filtered.map((l) => (
-                <LotRow key={l.code} l={l} compare={compare.has(l.code)} onCompare={() => toggleCompare(l.code)} />
+                <LotRow
+                  key={l.code}
+                  l={l}
+                  compare={compare.has(l.code)}
+                  onCompare={() => toggleCompare(l.code)}
+                  inCart={isInCart(l.code)}
+                  onAdd={() => handleAdd(l)}
+                />
               ))}
             </div>
           )}
@@ -271,6 +305,8 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
           </Button>
         </div>
       )}
+
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 }
@@ -321,7 +357,7 @@ function PriceDelta({ price, market }: { price: number; market: number }) {
   return <span className={`text-[10px] ${cls}`}>{label}</span>;
 }
 
-function LotCard({ l, compare, onCompare }: { l: Lot; compare: boolean; onCompare: () => void }) {
+function LotCard({ l, compare, onCompare, inCart, onAdd }: { l: Lot; compare: boolean; onCompare: () => void; inCart: boolean; onAdd: () => void }) {
   return (
     <article className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-0.5 transition-all group">
       <div className="relative aspect-[4/3] bg-[var(--ivory-2)] overflow-hidden">
@@ -364,8 +400,12 @@ function LotCard({ l, compare, onCompare }: { l: Lot; compare: boolean; onCompar
           <button className="text-xs py-2 rounded-full border border-[var(--border)] text-[var(--teal-deep)] hover:bg-[var(--ivory-2)] flex items-center justify-center gap-1">
             <BadgeCheck className="w-3.5 h-3.5" /> Ver ficha
           </button>
-          <button className="text-xs py-2 rounded-full bg-[var(--terracotta)] text-white hover:bg-[var(--terracotta-soft)] flex items-center justify-center gap-1">
-            <ShoppingCart className="w-3.5 h-3.5" /> Solicitar
+          <button
+            onClick={onAdd}
+            disabled={inCart}
+            className="text-xs py-2 rounded-full bg-[var(--terracotta)] text-white hover:bg-[var(--terracotta-soft)] flex items-center justify-center gap-1 disabled:bg-emerald-600 disabled:opacity-90"
+          >
+            {inCart ? <><CheckCircle2 className="w-3.5 h-3.5" /> Añadido</> : <><ShoppingCart className="w-3.5 h-3.5" /> Solicitar</>}
           </button>
         </div>
       </div>
@@ -373,7 +413,7 @@ function LotCard({ l, compare, onCompare }: { l: Lot; compare: boolean; onCompar
   );
 }
 
-function LotRow({ l, compare, onCompare }: { l: Lot; compare: boolean; onCompare: () => void }) {
+function LotRow({ l, compare, onCompare, inCart, onAdd }: { l: Lot; compare: boolean; onCompare: () => void; inCart: boolean; onAdd: () => void }) {
   return (
     <article className="bg-white rounded-2xl border border-[var(--border)] p-4 flex gap-4 hover:shadow-md transition-shadow">
       <div className="relative w-32 h-32 rounded-xl overflow-hidden shrink-0 bg-[var(--ivory-2)]">
@@ -404,7 +444,13 @@ function LotRow({ l, compare, onCompare }: { l: Lot; compare: boolean; onCompare
         </div>
         <div className="col-span-12 md:col-span-2 flex md:flex-col gap-2">
           <button onClick={onCompare} className={`flex-1 text-xs py-2 rounded-full border ${compare ? "bg-[var(--teal-deep)] text-[var(--ivory)] border-[var(--teal-deep)]" : "border-[var(--border)] text-[var(--teal-deep)]"}`}>Comparar</button>
-          <button className="flex-1 text-xs py-2 rounded-full bg-[var(--terracotta)] text-white">Solicitar</button>
+          <button
+            onClick={onAdd}
+            disabled={inCart}
+            className="flex-1 text-xs py-2 rounded-full bg-[var(--terracotta)] text-white disabled:bg-emerald-600 disabled:opacity-90"
+          >
+            {inCart ? "Añadido" : "Solicitar"}
+          </button>
         </div>
       </div>
     </article>
