@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Role, Estado } from "@/lib/supabase/types";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 type AuthState = {
   user: User | null;
@@ -22,6 +23,32 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Comprobar cookie de bypass demo en el cliente
+    if (typeof window !== "undefined") {
+      const match = document.cookie.split("; ").find((row) => row.startsWith("alpacash_demo_session="));
+      if (match) {
+        const val = match.split("=")[1] as Role;
+        setUser({
+          id: "demo-uuid-1234-5678",
+          email: `${val}@alpacash.pe`,
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        } as any);
+        setRole(val);
+        setEstado("activo");
+        setNombre(`Demo ${val.charAt(0).toUpperCase() + val.slice(1)}`);
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (!getSupabaseEnv().isConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
     let cancelled = false;
 
@@ -78,8 +105,14 @@ export function useAuth(): AuthState {
   }, []);
 
   const signOut = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      document.cookie = "alpacash_demo_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+      window.location.href = "/auth/login";
+    }
+    if (getSupabaseEnv().isConfigured) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
   }, []);
 
   return { user, role, estado, nombre, loading, signOut };

@@ -86,6 +86,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--ivory)] text-[var(--foreground)]">
       <PillNavbar current="landing" onNavigate={onNav} onLogin={() => router.push("/auth/login")} onRegister={() => router.push("/auth/register")} />
+      <div className="h-20 sm:h-24" /> {/* Espaciador para evitar solapamiento de navbar con el ticker de trading */}
       <LivePriceTicker />
       <main>
         <Hero onPrimary={() => router.push("/auth/register")} onSecondary={() => router.push("/auth/register")} onExplore={() => router.push("/marketplace")} />

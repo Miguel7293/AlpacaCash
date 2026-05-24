@@ -35,6 +35,15 @@ export function PillNavbar({
 
   return (
     <>
+      {/* Capa de fondo desenfocado detrás de los elementos flotantes cuando se hace scroll */}
+      <div
+        className={`fixed top-0 left-0 right-0 h-20 z-[45] transition-all duration-300 pointer-events-none ${
+          scrolled
+            ? "bg-[var(--ivory)]/75 backdrop-blur-md border-b border-[var(--border)] opacity-100"
+            : "opacity-0"
+        }`}
+      />
+
       {/* Logo top-left + lang top-right */}
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
         <div className="max-w-[1500px] mx-auto px-5 sm:px-8 pt-4 sm:pt-6 flex items-start justify-between">

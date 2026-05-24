@@ -2,8 +2,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const demoRole = cookieStore.get("alpacash_demo_session")?.value;
+
+  if (demoRole) {
+    return <>{children}</>;
+  }
+
   if (!getSupabaseEnv().isConfigured) {
     redirect("/auth/login?error=supabase-config");
   }

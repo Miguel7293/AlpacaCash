@@ -105,20 +105,72 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
     }
   }
 
+  const DEMO_MAP: Record<string, { role: Role; email: string; pass: string }> = {
+    admin: { role: "admin", email: "admin@alpacash.pe", pass: "AlpacashAdmin2026!" },
+    productor: { role: "productor", email: "productor@alpacash.pe", pass: "AlpacashProductor2026!" },
+    comprador: { role: "empresa", email: "comprador@alpacash.pe", pass: "AlpacashComprador2026!" },
+    empresa: { role: "empresa", email: "comprador@alpacash.pe", pass: "AlpacashComprador2026!" },
+    financiera: { role: "financiera", email: "financiera@alpacash.pe", pass: "AlpacashFinanciera2026!" },
+  };
+
+  const handleDemoLogin = (role: Role) => {
+    setError(null);
+    setLoading(true);
+    try {
+      // Escribir cookie de bypass de demo
+      document.cookie = `alpacash_demo_session=${role}; path=/; max-age=86400; SameSite=Lax`;
+      router.push(ROLE_TO_ROUTE[role]);
+    } catch (err) {
+      setError("Error al iniciar modo demo.");
+      setLoading(false);
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
+    const inputLower = email.trim().toLowerCase();
+    const passLower = password.trim().toLowerCase();
+
+    // Si el usuario usa los atajos rápidos de demo (por ejemplo admin / admin)
+    if (DEMO_MAP[inputLower] && (passLower === inputLower || passLower === "admin" || passLower === "alpacash")) {
+      handleDemoLogin(DEMO_MAP[inputLower].role);
+      return;
+    }
+
     if (!env.isConfigured) {
+      // Si no está configurado Supabase pero es una cuenta demo, la permitimos de todos modos en bypass local
+      if (DEMO_MAP[inputLower]) {
+        handleDemoLogin(DEMO_MAP[inputLower].role);
+        return;
+      }
       setError("Falta configurar Supabase en Vercel o en Frontend/.env.local.");
       return;
     }
 
     setLoading(true);
     try {
+      // Mapear correo demo si coincide
+      let targetEmail = email;
+      let targetPassword = password;
+      if (DEMO_MAP[inputLower]) {
+        targetEmail = DEMO_MAP[inputLower].email;
+        targetPassword = DEMO_MAP[inputLower].pass;
+      }
+
       const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ 
+        email: targetEmail, 
+        password: targetPassword 
+      });
+
       if (authError) {
+        // Fallback: Si el inicio de sesión real en Supabase con credenciales de demo falla, activamos el bypass local.
+        if (DEMO_MAP[inputLower]) {
+          handleDemoLogin(DEMO_MAP[inputLower].role);
+          return;
+        }
         setError("Correo o contraseña incorrectos.");
         return;
       }
@@ -184,7 +236,7 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
               <Input
                 id="email"
-                type="email"
+                type="text"
                 placeholder="tu@correo.pe"
                 className="pl-9 h-11 bg-white border-[var(--border)]"
                 value={email}
@@ -227,15 +279,15 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
           )}
 
           {configError && !error && (
-            <p className="text-sm text-[var(--terracotta)] bg-[var(--pink)]/30 rounded-xl px-4 py-3">
-              Supabase todavía no está configurado. En Vercel cargá <code>NEXT_PUBLIC_SUPABASE_URL</code> y <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+            <p className="text-sm text-[var(--teal-deep)] bg-[var(--gold)]/20 rounded-xl px-4 py-3">
+              * Nota: Supabase no está configurado aún. Podés usar los accesos de demostración rápidos abajo.
             </p>
           )}
 
 
           <Button
             type="submit"
-            disabled={loading || !env.isConfigured}
+            disabled={loading}
             className="w-full h-12 rounded-full bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] disabled:opacity-60"
           >
             {loading ? "Ingresando…" : "Ingresar"}
@@ -255,6 +307,30 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
           >
             <Mail className="w-4 h-4 mr-2" /> {loading ? "Conectando…" : "Continuar con Google"}
           </Button>
+
+          <div className="relative my-4 pt-2">
+            <div className="h-px bg-[var(--border)]" />
+            <span className="absolute left-1/2 -translate-x-1/2 -top-1 bg-[var(--ivory)] px-3 text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]" style={{ fontWeight: 600 }}>Entorno de Demostración</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {[
+              { label: "Administrador (Demo)", role: "admin" },
+              { label: "Productor (Demo)", role: "productor" },
+              { label: "Comprador (Demo)", role: "empresa" },
+              { label: "Financiera (Demo)", role: "financiera" }
+            ].map(demo => (
+              <button
+                key={demo.role}
+                type="button"
+                onClick={() => handleDemoLogin(demo.role as Role)}
+                className="py-2.5 px-3 rounded-xl border-2 border-[var(--ink)] bg-white text-xs text-[var(--teal-deep)] hover:bg-[var(--ivory-2)] transition-colors text-center brutalist-shadow-sm"
+                style={{ fontWeight: 600 }}
+              >
+                {demo.label}
+              </button>
+            ))}
+          </div>
         </form>
 
         <p className="mt-8 text-center text-sm text-[var(--teal-deep)]/80">
