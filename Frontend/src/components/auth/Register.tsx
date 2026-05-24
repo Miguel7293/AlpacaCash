@@ -65,18 +65,26 @@ export function Register({
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
         },
       });
       if (oauthError) {
-        setError(oauthError.message);
+        setError(`Google: ${oauthError.message}`);
         setLoading(false);
+        return;
       }
+      if (!data?.url) {
+        setError("Supabase no devolvió la URL de Google. Revisá que el provider esté habilitado.");
+        setLoading(false);
+        return;
+      }
+      window.location.assign(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado con Google.");
+      setError(err instanceof Error ? `Error: ${err.message}` : "Error inesperado con Google.");
       setLoading(false);
     }
   }
@@ -222,7 +230,7 @@ export function Register({
               disabled={loading || !env.isConfigured}
               className="w-full h-11 rounded-full border-[var(--border)] bg-white text-[var(--teal-deep)] disabled:opacity-60"
             >
-              <Mail className="w-4 h-4 mr-2" /> Continuar con Google
+              <Mail className="w-4 h-4 mr-2" /> {loading ? "Conectando…" : "Continuar con Google"}
             </Button>
             <div className="relative">
               <div className="h-px bg-[var(--border)]" />
