@@ -16,6 +16,8 @@ export type CartLot = {
   price: number;
   prod: string;
   grade?: string;
+  recordId?: string;
+  productorId?: string;
 };
 
 type CartContextType = {

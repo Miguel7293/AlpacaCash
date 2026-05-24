@@ -18,6 +18,7 @@ export type ProducerLotRecord = {
 };
 
 export type MarketplaceLotRecord = {
+  recordId: string;
   id: string;
   cat: string;
   color: string;
@@ -27,6 +28,7 @@ export type MarketplaceLotRecord = {
   prod: string;
   grade: string;
   certified: boolean;
+  productorId: string;
 };
 
 export type PaymentRecord = {
@@ -185,7 +187,7 @@ export function useMarketplaceLots() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("lotes_fibra")
-        .select("codigo_lote,peso_libras,precio_por_libra,color,ubicacion_general,estado,categorias_fibra(nombre,nivel_calidad),productores(nombre_asociacion,comunidad)")
+        .select("id,codigo_lote,peso_libras,precio_por_libra,color,ubicacion_general,estado,productor_id,categorias_fibra(nombre,nivel_calidad),productores(id,nombre_asociacion,comunidad)")
         .order("created_at", { ascending: false });
 
       if (!cancelled) {
@@ -195,6 +197,7 @@ export function useMarketplaceLots() {
               const producer = row.productores as SupabaseRow | null;
               const category = row.categorias_fibra as SupabaseRow | null;
               return {
+                recordId: asString(row.id, ""),
                 id: asString(row.codigo_lote, "Lote"),
                 cat: asString(category?.nombre, "Fibra"),
                 color: asString(row.color, "Sin color"),
@@ -204,6 +207,7 @@ export function useMarketplaceLots() {
                 prod: asString(producer?.nombre_asociacion || producer?.comunidad, "Productor verificado"),
                 grade: String(category?.nivel_calidad ?? "A"),
                 certified: asString(row.estado).toLowerCase() === "disponible",
+                productorId: asString(row.productor_id, asString(producer?.id, "")),
               };
             })
           );
@@ -231,20 +235,46 @@ export function usePayments() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase.from("transacciones").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("transacciones")
+        .select(`
+          id,
+          created_at,
+          precio_por_libra,
+          lotes_fibra (
+            codigo_lote,
+            peso_libras
+          ),
+          empresas (
+            razon_social,
+            profiles (
+              nombre
+            )
+          )
+        `)
+        .order("created_at", { ascending: false });
 
       if (!cancelled) {
         if (!error && Array.isArray(data)) {
           setPayments(
-            data.map((row: SupabaseRow, index) => ({
-              id: asString(row.id, `TX-${index + 1}`),
-              date: asString(row.created_at, "Sin fecha"),
-              lot: asString(row.codigo_lote, asString(row.lote_codigo, "Sin lote")),
-              buyer: asString(row.comprador_nombre, asString(row.buyer_name, "Comprador")),
-              amount: asNumber(row.monto_total, asNumber(row.amount)),
-              lb: asNumber(row.peso_libras, asNumber(row.quantity)),
-              status: mapPaymentStatus(row.estado),
-            }))
+            data.map((row: SupabaseRow, index) => {
+              const lot = row.lotes_fibra as SupabaseRow | null;
+              const company = row.empresas as SupabaseRow | null;
+              const profile = company?.profiles as SupabaseRow | null;
+              
+              const price = asNumber(row.precio_por_libra);
+              const lbs = asNumber(lot?.peso_libras);
+              
+              return {
+                id: asString(row.id, `TX-${index + 1}`),
+                date: asString(row.created_at, "Sin fecha"),
+                lot: asString(lot?.codigo_lote, "Sin lote"),
+                buyer: asString(company?.razon_social || profile?.nombre, "Comprador"),
+                amount: price * lbs,
+                lb: lbs,
+                status: "en proceso",
+              };
+            })
           );
         }
         setLoading(false);
@@ -301,25 +331,48 @@ export function useOffers() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("solicitudes_compra")
-        .select("id,created_at,estado,precio_oferta,precio_por_libra,peso_libras,codigo_lote,comprador_nombre")
+        .select(`
+          id,
+          created_at,
+          estado,
+          lotes_fibra (
+            codigo_lote,
+            precio_por_libra,
+            peso_libras
+          ),
+          empresas (
+            razon_social,
+            profiles (
+              nombre
+            )
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (!cancelled) {
         if (!error && Array.isArray(data)) {
           setOffers(
-            data.map((row: SupabaseRow, index) => ({
-              recordId: asString(row.id, ""),
-              id: asString(row.id, `OF-${index + 1}`),
-              buyer: asString(row.comprador_nombre, "Comprador"),
-              lot: asString(row.codigo_lote, "Sin lote"),
-              offerPrice: asNumber(row.precio_oferta, asNumber(row.precio_por_libra)),
-              askPrice: asNumber(row.precio_por_libra, asNumber(row.precio_oferta)),
-              lb: asNumber(row.peso_libras, 0),
-              time: asString(row.created_at, "Sin fecha"),
-              status: (["aceptada", "rechazada", "contraoferta", "contra-enviada"].includes(asString(row.estado).toLowerCase())
-                ? asString(row.estado).toLowerCase()
-                : "pendiente") as OfferRecord["status"],
-            }))
+            data.map((row: SupabaseRow, index) => {
+              const lot = row.lotes_fibra as SupabaseRow | null;
+              const company = row.empresas as SupabaseRow | null;
+              const profile = company?.profiles as SupabaseRow | null;
+              
+              const lotPrice = asNumber(lot?.precio_por_libra);
+              
+              return {
+                recordId: asString(row.id, ""),
+                id: asString(row.id, `OF-${index + 1}`),
+                buyer: asString(company?.razon_social || profile?.nombre, "Comprador"),
+                lot: asString(lot?.codigo_lote, "Sin lote"),
+                offerPrice: lotPrice,
+                askPrice: lotPrice,
+                lb: asNumber(lot?.peso_libras, 0),
+                time: asString(row.created_at, "Sin fecha"),
+                status: (["aceptada", "rechazada", "contraoferta", "contra-enviada"].includes(asString(row.estado).toLowerCase())
+                  ? asString(row.estado).toLowerCase()
+                  : "pendiente") as OfferRecord["status"],
+              };
+            })
           );
         }
         setLoading(false);
@@ -411,17 +464,39 @@ export function usePurchaseOrders() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase.from("transacciones").select("*").order("created_at", { ascending: false }).limit(20);
+      const { data, error } = await supabase
+        .from("transacciones")
+        .select(`
+          id,
+          created_at,
+          precio_por_libra,
+          lotes_fibra (
+            peso_libras
+          ),
+          productores (
+            nombre_asociacion,
+            comunidad
+          )
+        `)
+        .order("created_at", { ascending: false }).limit(20);
       if (!cancelled) {
         if (!error && Array.isArray(data)) {
           setOrders(
-            data.map((row: SupabaseRow, index) => ({
-              id: asString(row.id, `PO-${index + 1}`),
-              supplier: asString(row.comprador_nombre, asString(row.supplier_name, "Proveedor verificado")),
-              total: asNumber(row.monto_total, asNumber(row.amount)),
-              status: asString(row.estado, "En proceso"),
-              eta: asString(row.fecha_entrega_estimada, asString(row.updated_at, asString(row.created_at, "Sin ETA"))),
-            }))
+            data.map((row: SupabaseRow, index) => {
+              const lot = row.lotes_fibra as SupabaseRow | null;
+              const producer = row.productores as SupabaseRow | null;
+              
+              const price = asNumber(row.precio_por_libra);
+              const lbs = asNumber(lot?.peso_libras);
+              
+              return {
+                id: asString(row.id, `PO-${index + 1}`),
+                supplier: asString(producer?.nombre_asociacion || producer?.comunidad, "Proveedor verificado"),
+                total: price * lbs,
+                status: "En proceso",
+                eta: asString(row.created_at, "Sin ETA"),
+              };
+            })
           );
         }
         setLoading(false);
@@ -445,20 +520,31 @@ export function useLogistics() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase.from("transacciones").select("*").order("created_at", { ascending: false }).limit(12);
+      const { data, error } = await supabase
+        .from("transacciones")
+        .select(`
+          id,
+          lotes_fibra (
+            codigo_lote,
+            ubicacion_general
+          ),
+          empresas (
+            direccion
+          )
+        `)
+        .order("created_at", { ascending: false }).limit(12);
       if (!cancelled) {
         if (!error && Array.isArray(data)) {
           setShipments(
             data.map((row: SupabaseRow, index) => {
-              const status = asString(row.estado, "En proceso");
-              const normalized = status.toLowerCase();
-              const progress = normalized.includes("entreg") ? 100 : normalized.includes("trans") ? 75 : normalized.includes("confirm") ? 45 : normalized.includes("pend") ? 20 : 55;
+              const lot = row.lotes_fibra as SupabaseRow | null;
+              const company = row.empresas as SupabaseRow | null;
               return {
                 id: asString(row.id, `ship-${index + 1}`),
-                route: `${asString(row.origen, asString(row.ubicacion_origen, "Origen"))} → ${asString(row.destino, asString(row.ubicacion_destino, "Destino"))}`,
-                lot: asString(row.codigo_lote, asString(row.lote_codigo, "Sin lote")),
-                progress,
-                state: status,
+                route: `${asString(lot?.ubicacion_general, "Origen")} → ${asString(company?.direccion, "Destino")}`,
+                lot: asString(lot?.codigo_lote, "Sin lote"),
+                progress: 55,
+                state: "En tránsito",
               };
             })
           );
@@ -563,16 +649,31 @@ export function useVouchers() {
     async function load() {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase.from("transacciones").select("*").order("created_at", { ascending: false }).limit(10);
+      const { data, error } = await supabase
+        .from("transacciones")
+        .select(`
+          id,
+          precio_por_libra,
+          lotes_fibra (
+            codigo_lote,
+            peso_libras
+          )
+        `)
+        .order("created_at", { ascending: false }).limit(10);
       if (!cancelled) {
         if (!error && Array.isArray(data)) {
           setVouchers(
-            data.map((row: SupabaseRow, index) => ({
-              id: asString(row.id, `voucher-${index}`),
-              title: asString(row.codigo_lote, asString(row.lote_codigo, "Voucher")),
-              amountLabel: `S/ ${asNumber(row.monto_total, asNumber(row.amount)).toLocaleString()}`,
-              status: asString(row.estado, "Activo"),
-            }))
+            data.map((row: SupabaseRow, index) => {
+              const lot = row.lotes_fibra as SupabaseRow | null;
+              const price = asNumber(row.precio_por_libra);
+              const lbs = asNumber(lot?.peso_libras);
+              return {
+                id: asString(row.id, `voucher-${index}`),
+                title: asString(lot?.codigo_lote, "Voucher"),
+                amountLabel: `S/ ${(price * lbs).toLocaleString()}`,
+                status: "Activo",
+              };
+            })
           );
         }
         setLoading(false);

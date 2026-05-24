@@ -11,6 +11,7 @@ import {
 import { useCart } from "@/lib/hooks/useCart";
 import { CartDrawer } from "./modals/CartDrawer";
 import { LotDetailModal, type DisplayLot } from "./modals/LotDetailModal";
+import { useMarketplaceLots, type MarketplaceLotRecord } from "@/lib/hooks/useDashboardData";
 
 type Lot = {
   code: string;
@@ -69,10 +70,14 @@ const statusDot: Record<Lot["status"], string> = {
   "En validación": "bg-sky-500",
 };
 
+export type LotExt = Lot & { recordId?: string; productorId?: string };
+
+export type SortKey = "recommended" | "price-asc" | "price-desc" | "rating";
+
 export function Marketplace({ onBack }: { onBack?: () => void }) {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [q, setQ] = useState("");
-  const [sort, setSort] = useState<"recommended" | "price-asc" | "price-desc" | "rating">("recommended");
+  const [sort, setSort] = useState<SortKey>("recommended");
   const [filters, setFilters] = useState({
     categories: new Set<string>(),
     colors: new Set<string>(),
@@ -89,9 +94,34 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
   const [lotOpen, setLotOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const { items: cartItems, addItem, count } = useCart();
+  const { lots: dbLots, loading } = useMarketplaceLots();
+
+  const activeLots = useMemo<LotExt[]>(() => {
+    if (dbLots && dbLots.length > 0) {
+      return dbLots.map((dbLot: MarketplaceLotRecord) => ({
+        recordId: dbLot.recordId,
+        productorId: dbLot.productorId,
+        code: dbLot.id,
+        image: dbLot.color.toLowerCase().includes("blan")
+          ? "https://images.unsplash.com/photo-1574883140236-2e2cb0835792?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900"
+          : "https://images.unsplash.com/photo-1598871956222-26b66d6559fe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+        category: (dbLot.cat || "Fibra") as any,
+        quality: (dbLot.grade === "A+" || dbLot.grade === "A" ? "Certificada" : dbLot.grade === "B" ? "Validada" : "En revisión") as any,
+        color: dbLot.color,
+        qty: dbLot.lb,
+        region: dbLot.origin,
+        price: dbLot.price,
+        marketPrice: dbLot.price * 0.95,
+        status: dbLot.certified ? "Disponible" : "En validación",
+        rating: 4.8,
+        verifiedProducer: true,
+      }));
+    }
+    return ALL_LOTS;
+  }, [dbLots]);
 
   const isInCart = (code: string) => cartItems.some((c) => c.id === code);
-  const handleAdd = (l: Lot) => {
+  const handleAdd = (l: LotExt) => {
     if (isInCart(l.code)) return;
     addItem({
       id: l.code,
@@ -101,11 +131,13 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
       price: l.price,
       prod: l.verifiedProducer ? "Productor verificado" : "Productor (pendiente)",
       grade: l.quality,
+      recordId: l.recordId,
+      productorId: l.productorId,
     });
   };
 
   const filtered = useMemo(() => {
-    let list = ALL_LOTS.filter((l) => {
+    let list = activeLots.filter((l) => {
       if (q && !`${l.code} ${l.region} ${l.color} ${l.category}`.toLowerCase().includes(q.toLowerCase())) return false;
       if (filters.categories.size && !filters.categories.has(l.category)) return false;
       if (filters.colors.size && !filters.colors.has(l.color)) return false;
@@ -120,11 +152,11 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     else if (sort === "rating") list = [...list].sort((a, b) => b.rating - a.rating);
     return list;
-  }, [q, sort, filters]);
+  }, [activeLots, q, sort, filters]);
 
   const comparedLots = useMemo(
-    () => ALL_LOTS.filter((lot) => compare.has(lot.code)),
-    [compare]
+    () => activeLots.filter((lot) => compare.has(lot.code)),
+    [activeLots, compare]
   );
 
   const toggleSet = (key: "categories" | "colors" | "regions" | "qualities", value: string) => {
@@ -273,6 +305,13 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
           {/* Active chips */}
           <ActiveChips filters={filters} toggleSet={toggleSet} />
 
+          {loading && (
+            <div className="mb-5 p-4 rounded-2xl bg-[var(--gold)]/20 border-2 border-[var(--ink)] flex items-center justify-center gap-3 text-sm text-[var(--ink)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--terracotta)] animate-ping" />
+              Sincronizando lotes en tiempo real con Supabase...
+            </div>
+          )}
+
           {/* Grid / List */}
           {view === "grid" ? (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -350,7 +389,7 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
               </button>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {comparedLots.map((lot) => (
+              {comparedLots.map((lot: LotExt) => (
                 <article key={lot.code} className="rounded-2xl border border-[var(--border)] p-5 bg-[var(--ivory)]">
                   <div className="flex items-center justify-between">
                     <div className="text-[var(--teal-deep)]" style={{ fontWeight: 600 }}>{lot.code}</div>
