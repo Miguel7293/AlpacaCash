@@ -5,7 +5,7 @@ import { ArtCard, SectionLabel } from "../../DashShell";
 const users = [
   { name: "Juana Quispe", role: "Productor", status: "Verificado" },
   { name: "Textiles Andina", role: "Comprador", status: "Activo" },
-  { name: "Rosa Huillca", role: "Capacitador", status: "Pendiente" },
+  { name: "Caja Andina", role: "Aliado financiero", status: "Pendiente" },
 ];
 
 export function UsersTab() {

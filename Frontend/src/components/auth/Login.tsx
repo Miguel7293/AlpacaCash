@@ -12,6 +12,8 @@ import { ROLE_TO_ROUTE } from "@/lib/supabase/types";
 import type { Role } from "@/lib/supabase/types";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
+const VALID_ROLES: Role[] = ["productor", "empresa", "admin", "financiera"];
+
 export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?: () => void }) {
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
@@ -40,9 +42,37 @@ export function Login({ onBack, onRegister }: { onBack?: () => void; onRegister?
         setError("Correo o contraseña incorrectos.");
         return;
       }
-      const role = data.user?.user_metadata?.role as Role | undefined;
-      const destination = role ? ROLE_TO_ROUTE[role] : "/";
-      router.push(destination);
+
+      const userId = data.user?.id;
+      if (!userId) {
+        setError("Sesión iniciada pero no se pudo identificar al usuario.");
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("rol, estado")
+        .eq("id", userId)
+        .single();
+
+      if (profileError || !profile) {
+        setError("Tu cuenta aún no tiene perfil asignado. Contactá al equipo de AlpaCash.");
+        return;
+      }
+
+      if (profile.estado === "suspendido" || profile.estado === "rechazado") {
+        await supabase.auth.signOut();
+        setError(`Tu cuenta está ${profile.estado}. Contactá al equipo para reactivarla.`);
+        return;
+      }
+
+      const role = profile.rol as Role;
+      if (!VALID_ROLES.includes(role)) {
+        setError("El rol de tu cuenta no es válido. Contactá al equipo.");
+        return;
+      }
+
+      router.push(ROLE_TO_ROUTE[role]);
     } finally {
       setLoading(false);
     }

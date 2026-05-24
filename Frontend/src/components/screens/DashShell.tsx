@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { ReactNode } from "react";
 import { ArrowLeft, Bell, Search } from "lucide-react";
-import { FiberBall } from "../icons/AlpaIcons";
+import { PendingBanner } from "../auth/PendingBanner";
 
 export function DashShell({
   role,
@@ -23,6 +23,8 @@ export function DashShell({
   return (
     <div className="min-h-screen bg-[var(--ivory)] text-[var(--ink)]">
       <div className="absolute inset-0 grain pointer-events-none opacity-40" />
+
+      <PendingBanner />
 
       {/* Top bar */}
       <header className="sticky top-0 z-40 bg-[var(--ivory)]/90 backdrop-blur border-b-2 border-[var(--ink)]/10">

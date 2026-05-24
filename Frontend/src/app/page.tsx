@@ -18,16 +18,15 @@ import { CTAFooter } from "@/components/CTAFooter";
 import { ProducerDashboard } from "@/components/screens/ProducerDashboard";
 import { BuyerDashboard } from "@/components/screens/BuyerDashboard";
 import { AdminDashboard } from "@/components/screens/AdminDashboard";
-import { TrainerDashboard } from "@/components/screens/TrainerDashboard";
 import { FinancialDashboard } from "@/components/screens/FinancialDashboard";
 import { LotDetailModal } from "@/components/modals/LotDetailModal";
 import { NewLotModal } from "@/components/modals/NewLotModal";
 import { CartDrawer } from "@/components/modals/CartDrawer";
 import { motion } from "motion/react";
-import { AlpacaHead, FactorySimple, ShieldWeave, SeedLeaf, Vault } from "@/components/icons/AlpaIcons";
+import { AlpacaHead, FactorySimple, ShieldWeave, Vault } from "@/components/icons/AlpaIcons";
 import type { DisplayLot } from "@/components/modals/LotDetailModal";
 
-type DemoView = "demo-producer" | "demo-buyer" | "demo-admin" | "demo-trainer" | "demo-financial";
+type DemoView = "demo-producer" | "demo-buyer" | "demo-admin" | "demo-financial";
 
 export default function Home() {
   const router = useRouter();
@@ -56,7 +55,6 @@ export default function Home() {
       </>
     );
   if (demoView === "demo-admin") return <AdminDashboard onBack={goLanding} />;
-  if (demoView === "demo-trainer") return <TrainerDashboard onBack={goLanding} />;
   if (demoView === "demo-financial") return <FinancialDashboard onBack={goLanding} />;
 
   const onNav = (t: NavTarget) => {
@@ -82,7 +80,6 @@ export default function Home() {
     { v: "demo-producer" as DemoView, label: "Productor", desc: "Esquila, lotes, ofertas, ingresos.", icon: <AlpacaHead size={28} />, c: "var(--terracotta)" },
     { v: "demo-buyer" as DemoView, label: "Comprador", desc: "Mercado, trazabilidad, compras.", icon: <FactorySimple size={28} />, c: "var(--teal-500)" },
     { v: "demo-admin" as DemoView, label: "Administrador", desc: "Sala de control y privacidad.", icon: <ShieldWeave size={28} />, c: "var(--plum)" },
-    { v: "demo-trainer" as DemoView, label: "Facilitador", desc: "Talleres, podcast y comunidad.", icon: <SeedLeaf size={28} />, c: "var(--gold)" },
     { v: "demo-financial" as DemoView, label: "Financiero", desc: "Scoring, vouchers y seguros.", icon: <Vault size={28} />, c: "var(--teal-700)" },
   ];
 
@@ -100,10 +97,10 @@ export default function Home() {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="w-10 h-px bg-[var(--ink)]/40" />
-                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--ink)]/60">N°02 · Demo en vivo · 5 roles</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--ink)]/60">N°02 · Demo en vivo · 4 roles</span>
                 </div>
                  <h2 className="font-display leading-[0.95] text-[var(--ink)]" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", fontWeight: 500 }}>
-                   Cinco oficios.<br />
+                   Cuatro oficios.<br />
                    <em className="font-editorial text-[var(--terracotta)]" style={{ fontWeight: 400 }}>Una sola</em> red.
                  </h2>
                </div>
@@ -112,7 +109,7 @@ export default function Home() {
                </p>
              </div>
 
-             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                {roleCards.map((d, i) => (
                  <motion.div
                    key={d.v}
@@ -132,10 +129,6 @@ export default function Home() {
                     </div>
                      <div className="font-display text-2xl mt-4" style={{ fontWeight: 600 }}>{d.label}</div>
                      <p className="text-sm text-[var(--ink)]/70 mt-1">{d.desc}</p>
-                     <div className="mt-4 flex items-center gap-2 text-xs font-mono uppercase tracking-wider">
-                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 live-dot" />
-                       Rol habilitado
-                     </div>
                    </div>
                  </motion.div>
                ))}

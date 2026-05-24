@@ -1,29 +1,34 @@
-export type Role =
-  | "productor"
-  | "comprador"
-  | "administrador"
-  | "capacitador"
-  | "financiero";
+export type Role = "productor" | "empresa" | "admin" | "financiera";
+
+export type Estado = "pendiente" | "activo" | "suspendido" | "rechazado";
 
 export type UserProfile = {
   id: string;
   email: string;
-  role: Role;
-  full_name?: string;
+  nombre: string;
+  telefono?: string | null;
+  rol: Role;
+  estado: Estado;
+  avatar_url?: string | null;
 };
 
 export const ROLE_TO_ROUTE: Record<Role, string> = {
   productor: "/dashboard/productor",
-  comprador: "/dashboard/comprador",
-  administrador: "/dashboard/administrador",
-  capacitador: "/dashboard/capacitador",
-  financiero: "/dashboard/financiero",
+  empresa: "/dashboard/comprador",
+  admin: "/dashboard/administrador",
+  financiera: "/dashboard/financiero",
+};
+
+export const ROUTE_TO_ROLE: Record<string, Role> = {
+  productor: "productor",
+  comprador: "empresa",
+  administrador: "admin",
+  financiero: "financiera",
 };
 
 export const ROLE_ID_TO_ROLE: Record<string, Role> = {
   producer: "productor",
-  buyer: "comprador",
-  trainer: "capacitador",
-  admin: "administrador",
-  financial: "financiero",
+  buyer: "empresa",
+  admin: "admin",
+  financial: "financiera",
 };

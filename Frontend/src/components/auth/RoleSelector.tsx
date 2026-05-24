@@ -1,13 +1,12 @@
-import { Sprout, Factory, ShieldCheck, LayoutDashboard, Landmark, ArrowLeft, ArrowRight } from "lucide-react";
+import { Sprout, Factory, LayoutDashboard, Landmark, ArrowLeft, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 
-export type RoleId = "producer" | "buyer" | "trainer" | "admin" | "financial";
+export type RoleId = "producer" | "buyer" | "admin" | "financial";
 
 const roles: { id: RoleId; icon: typeof Sprout; title: string; desc: string; soon?: boolean }[] = [
   { id: "producer", icon: Sprout, title: "Productor / Asociación", desc: "Publica lotes, recibe solicitudes, construye historial y accede a mejores oportunidades." },
   { id: "buyer", icon: Factory, title: "Comprador / Empresa", desc: "Explora lotes trazables, compara calidad, solicita compra y gestiona facturas." },
-  { id: "trainer", icon: ShieldCheck, title: "Capacitador / Certificador", desc: "Registra capacitaciones, revisa evidencia y valida procesos con aliados." },
   { id: "admin", icon: LayoutDashboard, title: "Administrador", desc: "Controla usuarios, lotes, solicitudes, reportes, facturación y seguridad." },
   { id: "financial", icon: Landmark, title: "Aliado financiero", desc: "Consulta reportes autorizados para evaluar oportunidades de financiamiento." },
 ];

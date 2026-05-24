@@ -1,4 +1,4 @@
-import { Sprout, Factory, ShieldCheck, LayoutDashboard, Landmark, ArrowRight } from "lucide-react";
+import { Sprout, Factory, LayoutDashboard, Landmark, ArrowRight } from "lucide-react";
 
 const roles = [
   {
@@ -18,14 +18,6 @@ const roles = [
     bg: "from-[var(--ivory)] to-[var(--terracotta)]/15",
   },
   {
-    icon: ShieldCheck,
-    title: "Capacitador / Certificador",
-    desc: "Registra capacitaciones, revisa evidencia y valida procesos con aliados.",
-    cta: "Soy aliado técnico",
-    accent: "bg-[var(--teal-deep)] text-[var(--ivory)]",
-    bg: "from-[var(--ivory)] to-[var(--teal-500)]/15",
-  },
-  {
     icon: LayoutDashboard,
     title: "Administrador",
     desc: "Controla usuarios, lotes, solicitudes, reportes, facturación y seguridad.",
@@ -37,10 +29,9 @@ const roles = [
     icon: Landmark,
     title: "Aliado financiero",
     desc: "Consulta reportes autorizados para evaluar oportunidades de financiamiento.",
-    cta: "Próximamente",
+    cta: "Soy aliado financiero",
     accent: "bg-sky-600 text-white",
     bg: "from-[var(--ivory)] to-sky-100",
-    soon: true,
   },
 ];
 
@@ -54,7 +45,7 @@ export function Roles({ onPick }: { onPick?: () => void }) {
             ¿Cómo usarás AlpaCash?
           </h2>
           <p className="mt-4 text-[var(--teal-deep)]/70">
-            Cinco perfiles, una misma red de confianza comercial alpaquera.
+            Cuatro perfiles, una misma red de confianza comercial alpaquera.
           </p>
         </div>
 
@@ -62,13 +53,8 @@ export function Roles({ onPick }: { onPick?: () => void }) {
           {roles.map((r) => (
             <div
               key={r.title}
-              className={`relative rounded-3xl border border-[var(--border)] p-7 bg-gradient-to-br ${r.bg} hover:shadow-xl transition-shadow flex flex-col ${r.soon ? "opacity-95" : ""}`}
+              className={`relative rounded-3xl border border-[var(--border)] p-7 bg-gradient-to-br ${r.bg} hover:shadow-xl transition-shadow flex flex-col`}
             >
-              {r.soon && (
-                <span className="absolute top-4 right-4 text-[10px] px-2 py-1 rounded-full bg-white text-sky-700 border border-sky-200">
-                  Rol futuro
-                </span>
-              )}
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${r.accent}`}>
                 <r.icon className="w-6 h-6" />
               </div>
@@ -76,11 +62,10 @@ export function Roles({ onPick }: { onPick?: () => void }) {
               <p className="mt-2 text-sm text-[var(--teal-deep)]/70 leading-relaxed flex-1">{r.desc}</p>
               <button
                 onClick={onPick}
-                disabled={r.soon}
-                className="mt-5 inline-flex items-center gap-2 text-[var(--teal-deep)] group disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-5 inline-flex items-center gap-2 text-[var(--teal-deep)] group"
               >
                 <span style={{ fontWeight: 500 }}>{r.cta}</span>
-                {!r.soon && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           ))}

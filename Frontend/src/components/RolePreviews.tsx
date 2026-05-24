@@ -2,19 +2,18 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sprout, Factory, ShieldCheck, LayoutDashboard, Landmark,
-  Plus, BadgeCheck, TrendingUp, Package, ShoppingCart, Users, FileBarChart, Clock,
-  Activity, AlertTriangle, CheckCircle2, ClipboardList, BookOpen, Camera, MapPin,
+  Plus, TrendingUp, Package, ShoppingCart, Users, FileBarChart, Clock,
+  Activity, AlertTriangle, CheckCircle2, ClipboardList, BookOpen, MapPin,
   Wallet, Building2, FileText, Bell, Search
 } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
-type RoleKey = "producer" | "buyer" | "admin" | "trainer" | "financial";
+type RoleKey = "producer" | "buyer" | "admin" | "financial";
 
 const ROLES: { key: RoleKey; icon: typeof Sprout; label: string; tagline: string; theme: string }[] = [
   { key: "producer", icon: Sprout, label: "Productor", tagline: "Mobile-first, acción y progreso", theme: "from-[var(--gold-soft)]/40 to-[var(--ivory)]" },
   { key: "buyer", icon: Factory, label: "Comprador", tagline: "Desktop B2B, abastecimiento y riesgo", theme: "from-[var(--terracotta)]/15 to-[var(--ivory)]" },
   { key: "admin", icon: LayoutDashboard, label: "Administrador", tagline: "Operaciones, tablas y auditoría", theme: "from-[var(--alpaca-brown)]/20 to-[var(--ivory)]" },
-  { key: "trainer", icon: ShieldCheck, label: "Capacitador / Certificador", tagline: "Tablet en campo, checklists y evidencia", theme: "from-[var(--teal-500)]/15 to-[var(--ivory)]" },
   { key: "financial", icon: Landmark, label: "Aliado financiero", tagline: "Reportes referenciales autorizados", theme: "from-sky-100 to-[var(--ivory)]" },
 ];
 
@@ -37,11 +36,11 @@ export function RolePreviews() {
         <div className="text-center max-w-2xl mx-auto">
           <div className="text-xs uppercase tracking-[0.18em] text-[var(--terracotta)]">Demo · Interfaces por rol</div>
           <h2 className="mt-3 text-3xl sm:text-4xl tracking-tight text-[var(--teal-deep)]" style={{ fontWeight: 600, lineHeight: 1.15 }}>
-            Una plataforma. Cinco experiencias distintas.
+            Una plataforma. Cuatro experiencias distintas.
           </h2>
           <p className="mt-4 text-[var(--teal-deep)]/70">
             Cada rol ve y opera lo que necesita: el productor en su celular, el comprador en su panel B2B, el admin con
-            tablas y auditoría, el capacitador en tablet de campo.
+            tablas y auditoría, el aliado financiero con reportes autorizados.
           </p>
         </div>
 
@@ -83,7 +82,6 @@ export function RolePreviews() {
               {role === "producer" && <ProducerPreview />}
               {role === "buyer" && <BuyerPreview />}
               {role === "admin" && <AdminPreview />}
-              {role === "trainer" && <TrainerPreview />}
               {role === "financial" && <FinancialPreview />}
             </motion.div>
           </AnimatePresence>
@@ -120,14 +118,6 @@ function PhoneChrome({ children }: { children: React.ReactNode }) {
         </div>
         <div className="px-4 pb-4">{children}</div>
       </div>
-    </div>
-  );
-}
-
-function TabletChrome({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto max-w-3xl rounded-[1.5rem] bg-[var(--teal-deep)] p-3 shadow-2xl">
-      <div className="rounded-xl bg-[var(--ivory)] overflow-hidden p-5">{children}</div>
     </div>
   );
 }
@@ -391,66 +381,6 @@ function AdminPreview() {
         <Highlight icon={Users} title="Operaciones, no marketing" desc="Sidebar denso por módulos: usuarios, lotes, transacciones, reclamos, auditoría." />
         <Highlight icon={FileBarChart} title="Métricas de plataforma" desc="Ingresos, lotes pendientes, reclamos abiertos y capacitaciones en una sola mirada." />
         <Highlight icon={AlertTriangle} title="Auditoría completa" desc="Logs por usuario y acción, con estado anterior/nuevo para trazar cada cambio." />
-      </div>
-    </div>
-  );
-}
-
-function TrainerPreview() {
-  return (
-    <div className="grid lg:grid-cols-12 gap-8 items-center">
-      <div className="lg:col-span-7">
-        <TabletChrome>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-[var(--terracotta)]">Visita de campo</div>
-              <div className="text-[var(--teal-deep)]" style={{ fontWeight: 600 }}>Capacitación · Comunidad Tinta</div>
-              <div className="text-xs text-[var(--muted-foreground)]">Hoy · 14 asistentes · Puno</div>
-            </div>
-            <Camera className="w-6 h-6 text-[var(--teal-deep)]" />
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {[
-              { l: "Asistentes", v: "14", i: Users },
-              { l: "Evidencias", v: "8 fotos", i: Camera },
-              { l: "Avance curso", v: "60%", i: BookOpen },
-            ].map((k) => (
-              <div key={k.l} className="bg-[var(--ivory-2)] rounded-xl p-3">
-                <k.i className="w-4 h-4 text-[var(--teal-deep)]" />
-                <div className="mt-2 text-[var(--teal-deep)] text-sm" style={{ fontWeight: 600 }}>{k.v}</div>
-                <div className="text-[10px] text-[var(--muted-foreground)]">{k.l}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 bg-white rounded-xl border border-[var(--border)] p-3">
-            <div className="text-xs text-[var(--muted-foreground)] mb-2">Checklist · Clasificación de fibra</div>
-            <div className="space-y-1.5 text-[11px]">
-              {[
-                ["Esquila en condiciones limpias", true],
-                ["Separación por color realizada", true],
-                ["Categoría declarada por productor", true],
-                ["Fotos de evidencia cargadas", false],
-                ["Documento firmado por productor", false],
-              ].map(([t, ok]) => (
-                <label key={String(t)} className="flex items-center gap-2 text-[var(--teal-deep)]">
-                  <span className={`w-4 h-4 rounded border ${ok ? "bg-emerald-500 border-emerald-500" : "border-[var(--border)] bg-white"} flex items-center justify-center`}>
-                    {ok && <CheckCircle2 className="w-3 h-3 text-white" />}
-                  </span>
-                  {t}
-                </label>
-              ))}
-            </div>
-            <div className="mt-3 flex gap-2">
-              <button className="flex-1 text-[11px] py-2 rounded-full bg-[var(--teal-deep)] text-[var(--ivory)]">Aprobar lote</button>
-              <button className="flex-1 text-[11px] py-2 rounded-full border border-[var(--border)] text-[var(--teal-deep)]">Solicitar corrección</button>
-            </div>
-          </div>
-        </TabletChrome>
-      </div>
-      <div className="lg:col-span-5 space-y-4">
-        <Highlight icon={ClipboardList} title="Tablet en campo" desc="Checklists grandes, fotos rápidas y aprobación/observación con un toque." />
-        <Highlight icon={ShieldCheck} title="Trazabilidad como acto" desc="Cada visita queda registrada con evidencia, asistencia y resultado por productor." />
-        <Highlight icon={BookOpen} title="Aliados certificadores" desc="Estado por aliado externo. AlpaCash acompaña; el certificador externo decide." />
       </div>
     </div>
   );

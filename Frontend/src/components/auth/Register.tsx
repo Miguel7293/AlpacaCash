@@ -6,16 +6,15 @@ import { AuthShell } from "./AuthShell";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Mail, Lock, User, MapPin, Building2, Sprout, Factory, ShieldCheck, LayoutDashboard, Landmark, ArrowRight, Check } from "lucide-react";
+import { Mail, Lock, User, MapPin, Building2, Sprout, Factory, LayoutDashboard, Landmark, ArrowRight, Check } from "lucide-react";
 import type { RoleId } from "./RoleSelector";
 import { createClient } from "@/lib/supabase/client";
-import { ROLE_ID_TO_ROLE, ROLE_TO_ROUTE } from "@/lib/supabase/types";
+import { ROLE_ID_TO_ROLE, ROLE_TO_ROUTE, type Role } from "@/lib/supabase/types";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 const roleOptions: { id: RoleId; icon: typeof Sprout; label: string }[] = [
   { id: "producer", icon: Sprout, label: "Productor" },
   { id: "buyer", icon: Factory, label: "Comprador" },
-  { id: "trainer", icon: ShieldCheck, label: "Capacitador" },
   { id: "admin", icon: LayoutDashboard, label: "Admin" },
   { id: "financial", icon: Landmark, label: "Financiero" },
 ];
@@ -55,7 +54,6 @@ export function Register({
   const eyebrow =
     role === "producer" ? "Productor alpaquero" :
     role === "buyer" ? "Empresa textil" :
-    role === "trainer" ? "Aliado técnico" :
     role === "financial" ? "Aliado financiero" : "Administrador";
 
   async function handleFinalSubmit() {
@@ -70,13 +68,15 @@ export function Register({
     try {
       const supabase = createClient();
       const mappedRole = ROLE_ID_TO_ROLE[role];
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
       const { data, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             role: mappedRole,
-            full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+            full_name: fullName,
           },
         },
       });
@@ -84,12 +84,65 @@ export function Register({
         setError(authError.message);
         return;
       }
-      const userRole = data.user?.user_metadata?.role ?? mappedRole;
-      const destination = ROLE_TO_ROUTE[userRole as keyof typeof ROLE_TO_ROUTE] ?? "/";
-      router.push(destination);
+
+      const userId = data.user?.id;
+      if (!userId) {
+        setError("Cuenta creada pero el registro quedó incompleto. Confirmá tu correo y volvé a iniciar sesión.");
+        return;
+      }
+
+      // The handle_new_user trigger already created public.profiles.
+      // Now insert role-specific row with wizard data.
+      const detailError = await insertRoleDetail(supabase, userId, mappedRole, fullName);
+      if (detailError) {
+        setError(`Cuenta creada pero faltó guardar tu perfil: ${detailError}`);
+        return;
+      }
+
+      router.push(ROLE_TO_ROUTE[mappedRole]);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function insertRoleDetail(
+    supabase: ReturnType<typeof createClient>,
+    userId: string,
+    rol: Role,
+    fullName: string,
+  ): Promise<string | null> {
+    if (rol === "productor") {
+      const { error: e } = await supabase.from("productores").insert({
+        profile_id: userId,
+        codigo_productor: `AC-${Date.now().toString(36).toUpperCase()}`,
+        dni_ruc: formData.dni || null,
+        nombre_asociacion: formData.community || null,
+        comunidad: formData.community || null,
+        provincia: formData.province || null,
+        region: formData.region || "Puno",
+      });
+      return e?.message ?? null;
+    }
+    if (rol === "empresa") {
+      const { error: e } = await supabase.from("empresas").insert({
+        profile_id: userId,
+        ruc: formData.ruc || null,
+        razon_social: formData.razonSocial || fullName,
+        rubro: formData.sector || null,
+        direccion: formData.address || null,
+      });
+      return e?.message ?? null;
+    }
+    if (rol === "financiera") {
+      const { error: e } = await supabase.from("entidades_financieras").insert({
+        profile_id: userId,
+        razon_social: formData.razonSocial || fullName,
+        ruc: formData.ruc || null,
+      });
+      return e?.message ?? null;
+    }
+    // admin: no extra table to insert
+    return null;
   }
 
   function handleNext(e: React.FormEvent) {
