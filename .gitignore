@@ -1,0 +1,116 @@
+# =========================
+# Dependencias
+# =========================
+node_modules/
+*/node_modules/
+
+# =========================
+# Variables de entorno
+# =========================
+.env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# =========================
+# Next.js
+# =========================
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.vercel/
+
+# =========================
+# Backend TypeScript / Node
+# =========================
+backend/dist/
+backend/build/
+backend/logs/
+backend/*.log
+
+# =========================
+# Logs
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# =========================
+# Cache
+# =========================
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+# =========================
+# Testing / coverage
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# Archivos temporales
+# =========================
+tmp/
+temp/
+uploads/
+*.tmp
+
+# =========================
+# Supabase local
+# =========================
+supabase/.branches/
+supabase/.temp/
+
+# No ignorar migraciones de Supabase
+!supabase/migrations/
+
+# =========================
+# Sistema operativo
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Editores
+# =========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Archivos de compilación
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Certificados y claves
+# =========================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# =========================
+# Base de datos local
+# =========================
+*.sqlite
+*.sqlite3
+*.db
