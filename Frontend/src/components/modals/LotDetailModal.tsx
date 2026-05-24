@@ -7,6 +7,8 @@ import { X, Heart, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import { StampSeal, FiberBall, MountainPath, ShieldWeave, ScaleBalance, ClipboardCheckArt } from "../icons/AlpaIcons";
 import { useCart } from "@/lib/hooks/useCart";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { AuthRequireModal } from "./AuthRequireModal";
 
 export type DisplayLot = {
   id: string;
@@ -35,8 +37,14 @@ export function LotDetailModal({ open, onClose, lot }: { open: boolean; onClose:
   const { addItem, items } = useCart();
   const added = items.some((cartItem) => cartItem.id === item.id);
   const [favorite, setFavorite] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleAdd = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     addItem({
       id: item.id,
       cat: item.cat,
@@ -49,8 +57,9 @@ export function LotDetailModal({ open, onClose, lot }: { open: boolean; onClose:
   };
 
   return (
-    <AnimatePresence>
-      {open && (
+    <>
+      <AnimatePresence>
+        {open && (
         <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -170,6 +179,8 @@ export function LotDetailModal({ open, onClose, lot }: { open: boolean; onClose:
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+      <AuthRequireModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </>
   );
 }

@@ -12,6 +12,8 @@ import { useCart } from "@/lib/hooks/useCart";
 import { CartDrawer } from "./modals/CartDrawer";
 import { LotDetailModal, type DisplayLot } from "./modals/LotDetailModal";
 import { useMarketplaceLots, type MarketplaceLotRecord } from "@/lib/hooks/useDashboardData";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { AuthRequireModal } from "./modals/AuthRequireModal";
 
 type Lot = {
   code: string;
@@ -90,11 +92,13 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
   });
   const [compare, setCompare] = useState<Set<string>>(new Set());
   const [cartOpen, setCartOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [detailLot, setDetailLot] = useState<DisplayLot | null>(null);
   const [lotOpen, setLotOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const { items: cartItems, addItem, count } = useCart();
   const { lots: dbLots, loading } = useMarketplaceLots();
+  const { user } = useAuth();
 
   const activeLots = useMemo<LotExt[]>(() => {
     if (dbLots && dbLots.length > 0) {
@@ -122,6 +126,10 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
 
   const isInCart = (code: string) => cartItems.some((c) => c.id === code);
   const handleAdd = (l: LotExt) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     if (isInCart(l.code)) return;
     addItem({
       id: l.code,
@@ -220,7 +228,7 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
             <Button variant="ghost" className="text-[var(--teal-deep)] hover:bg-[var(--ivory-2)] rounded-full px-3">
               <Heart className="w-4 h-4 mr-1.5" /> 4
             </Button>
-            <Button onClick={() => setCartOpen(true)} className="bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] rounded-full">
+            <Button onClick={() => { if (!user) { setAuthModalOpen(true); } else { setCartOpen(true); } }} className="bg-[var(--teal-deep)] hover:bg-[var(--teal-700)] text-[var(--ivory)] rounded-full">
               <ShoppingCart className="w-4 h-4 mr-1.5" /> Carrito ({count})
             </Button>
           </div>
@@ -371,6 +379,7 @@ export function Marketplace({ onBack }: { onBack?: () => void }) {
       )}
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <AuthRequireModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <LotDetailModal open={lotOpen} lot={detailLot} onClose={() => setLotOpen(false)} />
 
       {compareOpen && comparedLots.length > 0 && (
